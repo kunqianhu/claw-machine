@@ -1,383 +1,184 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>🍡 Pastel Emoji Claw Machine</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pastel Claw Machine</title>
 <style>
-  :root{
-    --pastel-pink:#ffd9ec;
-    --pastel-lilac:#e9ddff;
-    --pastel-mint:#d5ffe7;
-    --pastel-yellow:#fff3b0;
-    --pastel-peach:#ffe4d6;
-    --frame:#ffb6c1;
-    --accent:#ff7eb9;
-  }
-
-  *{box-sizing:border-box}
-  body{
-    margin:0; padding:18px;
-    font-family: ui-rounded, "Avenir Next", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-    background: linear-gradient(160deg,var(--pastel-peach),var(--pastel-lilac) 60%, var(--pastel-mint));
-    min-height:100svh; display:flex; flex-direction:column; align-items:center; gap:12px;
-  }
-  h1{ margin:0 0 6px; font-weight:800; letter-spacing:.3px; color:#a24a82; text-shadow:0 2px 0 #fff8; }
-  .wrap{ width:clamp(300px, 92vw, 520px); }
-
-  /* Machine frame */
-  .machine{
-    position:relative;
-    width:100%;
-    height:520px;
-    border:8px solid var(--frame);
-    border-radius:22px;
-    background: linear-gradient(#ffffffdd,#fff9,#fff6), linear-gradient(180deg,var(--pastel-pink),var(--pastel-yellow));
-    overflow:hidden;
-    box-shadow: 0 10px 24px #00000026, 0 2px 0 #fff inset;
-  }
-  .glass-glint{
-    position:absolute; inset:0;
-    background: linear-gradient(120deg,#fff7 0 25%, transparent 25% 75%, #fff5 75% 100%);
-    pointer-events:none;
-  }
-
-  /* Bin floor */
-  .floor{
-    position:absolute; left:0; right:0; bottom:0; height:120px;
-    background: linear-gradient(180deg, #fff7, #ffffff);
-    border-top:2px solid #ffffffcc;
-    box-shadow: 0 -8px 20px #00000010 inset;
-  }
-
-  /* Chute */
-  .chute{
-    position:absolute; left:10px; bottom:8px; width:84px; height:84px;
-    border:3px solid var(--accent); border-radius:12px;
-    background: radial-gradient(#999, #333);
-    box-shadow: inset 0 8px 16px #0008, 0 2px 0 #fff;
-  }
-
-  /* Claw rig */
-  .gantry{
-    position:absolute; top:0; left:0; right:0; height:54px;
-    background: linear-gradient(180deg, #ffeef8, #ffd2e8);
-    border-bottom:2px solid #ffffffc9;
-  }
-  .clawCable{
-    position:absolute; width:2px; background:#666;
-    top:54px; left:0; height:0; transform-origin:top;
-  }
-  .claw{
-    position:absolute; width:64px; height:64px;
-    top:54px; left:50%; transform:translateX(-50%);
-    transition: left .45s ease, top .8s ease;
-    transform-origin: top center;
-  }
-  .claw.sway{ animation: sway 1.2s ease-in-out infinite; }
-  @keyframes sway{
-    0%{ transform: translateX(-50%) rotate(0deg); }
-    25%{ transform: translateX(-50%) rotate(-3deg); }
-    50%{ transform: translateX(-50%) rotate(0deg); }
-    75%{ transform: translateX(-50%) rotate(3deg); }
-    100%{ transform: translateX(-50%) rotate(0deg); }
-  }
-  .head{ position:absolute; top:-8px; left:50%; transform:translateX(-50%); width:30px; height:22px; border-radius:8px;
-    background: linear-gradient(#bbb,#888); box-shadow:0 2px 0 #fff7 inset;
-  }
-  .arm{ position:absolute; top:12px; width:8px; height:36px; background: linear-gradient(#999,#5f5f5f);
-    border-radius:6px; transform-origin: top center; transition: transform .25s ease;
-    box-shadow: 0 6px 6px #00000014;
-  }
-  .arm.left{ left:4px; transform: rotate(-40deg); }
-  .arm.right{ right:4px; transform: rotate(40deg); }
-  .arm.center{ left:50%; transform:translateX(-50%) rotate(12deg); height:28px; }
-
-  .claw.closed .arm.left{ transform: rotate(-14deg); }
-  .claw.closed .arm.right{ transform: rotate(14deg); }
-  .claw.closed .arm.center{ transform: translateX(-50%) rotate(0deg); }
-
-  /* Toys */
-  .toy{
-    position:absolute;
-    font-size:64px;              /* BIGGIE */
-    line-height:1;
-    filter: drop-shadow(0 3px 2px #00000022);
-    transition: left .45s ease, top .45s ease, transform .18s ease;
-    user-select:none;
-  }
-  .toy.wobble{ animation: wobble .32s ease-in-out infinite; }
-  @keyframes wobble{
-    0%{ transform: translateX(0) rotate(0); }
-    25%{ transform: translateX(-2px) rotate(-5deg); }
-    50%{ transform: translateX(2px) rotate(5deg); }
-    75%{ transform: translateX(-1px) rotate(-4deg); }
-    100%{ transform: translateX(0) rotate(0); }
-  }
-  .toy.drop-shake{ animation: dropShake .4s ease; }
-  @keyframes dropShake{
-    0%{ transform: translateY(-10px) rotate(0); }
-    30%{ transform: translateY(2px) rotate(6deg); }
-    60%{ transform: translateY(-2px) rotate(-6deg); }
-    100%{ transform: translateY(0) rotate(0); }
-  }
-
-  /* Controls + status */
-  .controls{ display:flex; justify-content:center; gap:10px; flex-wrap:wrap; margin-top:10px; }
-  .btn{
-    padding:10px 16px; border:none; border-radius:12px; cursor:pointer; font-weight:700;
-    background: linear-gradient(180deg,#ffeaf6,#ffd8ef); color:#7a3a66;
-    box-shadow: 0 3px 0 #fff inset, 0 6px 16px #0000001a; transition: transform .08s ease;
-  }
-  .btn:active{ transform: translateY(1px) scale(.99); }
-  .msg{ min-height:28px; text-align:center; font-weight:800; color:#a24a82; }
-  .msg.pop{ animation: msgPop .5s ease; }
-  @keyframes msgPop{
-    0%{ transform: translateY(6px); opacity:.2; } 100%{ transform:none; opacity:1;}
-  }
-
-  /* Collection row */
-  .collection{
-    margin-top:10px; width:100%;
-    background: linear-gradient(180deg,#ffffffcc,#fff); border:3px dashed var(--accent);
-    border-radius:14px; padding:10px; display:flex; gap:8px; overflow-x:auto;
-    box-shadow: 0 3px 0 #fff inset;
-  }
-  .collection .c{ font-size:32px; transition: transform .15s ease; }
-  .collection .c:hover{ transform: translateY(-2px) scale(1.1); }
+    body {
+        background: #fceff1;
+        font-family: Arial, sans-serif;
+        text-align: center;
+        user-select: none;
+        margin: 0;
+        padding: 0;
+    }
+    h1 {
+        color: #f28ca0;
+    }
+    #game {
+        position: relative;
+        display: inline-block;
+        background: #fff4f7;
+        border: 4px solid #f7c5d0;
+        border-radius: 12px;
+        overflow: hidden;
+        width: 300px;
+        height: 400px;
+        margin-top: 10px;
+    }
+    .claw {
+        position: absolute;
+        top: 0;
+        width: 40px;
+        height: 40px;
+        font-size: 36px;
+        transition: top 0.3s;
+    }
+    .toy {
+        position: absolute;
+        font-size: 42px; /* Bigger emoji size */
+    }
+    #controls {
+        margin-top: 10px;
+    }
+    button {
+        padding: 8px 14px;
+        margin: 5px;
+        border: none;
+        border-radius: 6px;
+        background-color: #f7c5d0;
+        font-size: 18px;
+        cursor: pointer;
+        color: white;
+    }
+    button:active {
+        background-color: #f28ca0;
+    }
+    #message {
+        margin-top: 8px;
+        font-size: 18px;
+        color: #f28ca0;
+        height: 24px;
+    }
 </style>
 </head>
 <body>
-  <h1>🍥 Pastel Emoji Claw Machine 🍥</h1>
-  <div class="wrap">
-    <div class="machine" id="machine">
-      <div class="gantry"></div>
-      <div class="clawCable" id="cable"></div>
-      <div class="claw" id="claw">
-        <div class="head"></div>
-        <div class="arm left"></div>
-        <div class="arm right"></div>
-        <div class="arm center"></div>
-      </div>
-      <div class="floor"></div>
-      <div class="chute" title="Prize chute"></div>
-      <div class="glass-glint"></div>
-    </div>
 
-    <div class="controls">
-      <button class="btn" id="leftBtn">⬅️ Left</button>
-      <button class="btn" id="grabBtn">🪝 Grab</button>
-      <button class="btn" id="rightBtn">Right ➡️</button>
-    </div>
-    <div class="msg" id="msg"></div>
-    <div class="collection" id="collection" aria-label="Your prizes"></div>
-  </div>
+<h1>🎀 Pastel Claw Machine 🎀</h1>
+
+<div id="game">
+    <div class="claw" id="claw">🪝</div>
+</div>
+
+<div id="controls">
+    <button id="left">⬅️</button>
+    <button id="right">➡️</button>
+    <button id="grab">⬇️ Grab</button>
+</div>
+
+<div id="message"></div>
 
 <script>
-(() => {
-  const machine = document.getElementById('machine');
-  const claw = document.getElementById('claw');
-  const cable = document.getElementById('cable');
-  const msg = document.getElementById('msg');
-  const collection = document.getElementById('collection');
+const game = document.getElementById("game");
+const claw = document.getElementById("claw");
+const message = document.getElementById("message");
 
-  const EMOJIS = ["🧸","🦄","🐼","🐤","🐶","🦊","🐙","🐸","🐰","🐹","🎁","💖","💎","🍩","🍪","🍓","🍬"];
-  const toys = [];
+let clawX = 130; // initial center position
+let clawY = 0;
+let toys = [];
+let moveInterval;
+const step = 5; // smaller steps for precision
+const toySize = 48; // emoji "touching" size
 
-  const CLAW_W = 64, CLAW_H = 64;
-  let clawX = (machine.clientWidth - CLAW_W) / 2;
-  let clawY = 54;                         // beneath gantry
-  const step = 18;                        // smaller steps for precision
-  let busy = false;
-  let grabbed = null;
-
-  // Build random overlapping stacks
-  function layoutToys(){
-    const w = machine.clientWidth;
-    const leftPad = 20, rightPad = 20;
-    const usableW = w - leftPad - rightPad;
-    const cols = 7;
-    const colW = usableW / cols;
-    const baseY = machine.clientHeight - 120; // top of floor
-    for(let c=0;c<cols;c++){
-      const stack = 3 + Math.floor(Math.random()*4); // 3..6
-      for(let r=0;r<stack;r++){
-        const el = document.createElement('div');
-        el.className = 'toy';
-        el.textContent = EMOJIS[Math.floor(Math.random()*EMOJIS.length)];
-        const jitterX = (Math.random()-.5)*colW*0.5;
-        const jitterY = (Math.random()-.5)*6;
-        const x = leftPad + c*colW + colW/2 + jitterX - 26; // 26≈ half glyph width visual
-        const y = baseY - r*42 + jitterY;                   // overlap a bit
-        el.style.left = x + 'px';
-        el.style.top = y + 'px';
-        el.dataset.grabbed="false";
-        toys.push(el);
-        machine.appendChild(el);
-      }
+// Spawn overlapping toys
+function spawnToys() {
+    const toyEmojis = ["🧸","🐼","🐰","🐱","🐶","🦄","🐥"];
+    for (let i = 0; i < 15; i++) {
+        let x = (i % 5) * (toySize - 6) + 10; // overlap a bit
+        let y = Math.floor(i / 5) * (toySize - 6) + 200;
+        let toy = document.createElement("div");
+        toy.className = "toy";
+        toy.textContent = toyEmojis[Math.floor(Math.random() * toyEmojis.length)];
+        toy.style.left = x + "px";
+        toy.style.top = y + "px";
+        game.appendChild(toy);
+        toys.push({ el: toy, x, y });
     }
-  }
+}
+spawnToys();
 
-  function setMsg(t){ msg.textContent = t; msg.classList.remove('pop'); void msg.offsetWidth; msg.classList.add('pop'); }
+function updateClaw() {
+    claw.style.left = clawX + "px";
+    claw.style.top = clawY + "px";
+}
 
-  function updateClawPosition(){
-    claw.style.left = clawX + 'px';
-    claw.style.top  = clawY + 'px';
-    cable.style.left = (clawX + CLAW_W/2) + 'px';
-    cable.style.height = Math.max(0, (clawY - 54)) + 'px';
-    // keep grabbed toy attached under the claw
-    if(grabbed){
-      grabbed.style.left = (clawX + CLAW_W/2 - 24) + 'px';
-      grabbed.style.top  = (clawY + CLAW_H - 8) + 'px';
-    }
-  }
+// Hold-to-move controls
+function startMove(direction) {
+    clearInterval(moveInterval);
+    moveInterval = setInterval(() => {
+        clawX += direction * step;
+        clawX = Math.max(0, Math.min(clawX, game.clientWidth - claw.clientWidth));
+        updateClaw();
+    }, 50);
+}
 
-  function moveClaw(dir){
-    if(busy) return;
-    clawX += dir * step;
-    clawX = Math.max(6, Math.min(clawX, machine.clientWidth - CLAW_W - 6));
-    // add a subtle sway when moving
-    claw.classList.add('sway');
-    updateClawPosition();
-    // remove sway shortly after
-    clearTimeout(moveClaw._t);
-    moveClaw._t = setTimeout(()=>claw.classList.remove('sway'), 380);
-  }
+function stopMove() {
+    clearInterval(moveInterval);
+}
 
-  async function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+// Grab function
+document.getElementById("grab").addEventListener("click", () => {
+    let originalY = clawY;
+    clawY = 200;
+    updateClaw();
 
-  function toyCenterX(el){
-    const mLeft = machine.getBoundingClientRect().left;
-    const r = el.getBoundingClientRect();
-    return r.left - mLeft + r.width/2;
-  }
+    setTimeout(() => {
+        // Find toy directly under claw
+        let grabbedToy = toys.find(t => 
+            clawX + 20 > t.x && clawX < t.x + toySize &&
+            Math.abs(200 - t.y) < 20
+        );
 
-  function toyTop(el){ return parseFloat(el.style.top)||el.offsetTop; }
+        if (grabbedToy) {
+            // Chance to fail grab
+            if (Math.random() < 0.2) {
+                message.textContent = "😅 Oops! Missed the grab.";
+            } else {
+                // Chance to drop on way up
+                if (Math.random() < 0.2) {
+                    message.textContent = "😢 Oops! It slipped!";
+                } else {
+                    message.textContent = "🎉 You got " + grabbedToy.el.textContent + "!";
+                    game.removeChild(grabbedToy.el);
+                    toys = toys.filter(t => t !== grabbedToy);
+                }
+            }
+        } else {
+            message.textContent = "😅 Oops! Missed the grab.";
+        }
 
-  function candidateDirectUnder(){
-    // toys within ±(glyph width*0.45) horizontally and not grabbed
-    const center = clawX + CLAW_W/2;
-    const threshold = 28;
-    const candidates = toys.filter(t => t.dataset.grabbed==="false" && Math.abs(toyCenterX(t) - center) < threshold);
-    if(!candidates.length) return null;
-    // pick the top-most (smallest top)
-    return candidates.reduce((best,t)=> toyTop(t) < toyTop(best) ? t : best);
-  }
+        clawY = originalY;
+        updateClaw();
+    }, 500);
+});
 
-  async function grab(){
-    if(busy) return;
-    busy = true;
-    setMsg(''); // clear
+// Left button hold
+document.getElementById("left").addEventListener("mousedown", () => startMove(-1));
+document.getElementById("left").addEventListener("touchstart", e => { e.preventDefault(); startMove(-1); });
+document.getElementById("left").addEventListener("mouseup", stopMove);
+document.getElementById("left").addEventListener("mouseleave", stopMove);
+document.getElementById("left").addEventListener("touchend", stopMove);
 
-    const target = candidateDirectUnder();
-    let loweredTo = clawY;
+// Right button hold
+document.getElementById("right").addEventListener("mousedown", () => startMove(1));
+document.getElementById("right").addEventListener("touchstart", e => { e.preventDefault(); startMove(1); });
+document.getElementById("right").addEventListener("mouseup", stopMove);
+document.getElementById("right").addEventListener("mouseleave", stopMove);
+document.getElementById("right").addEventListener("touchend", stopMove);
 
-    if(target){
-      // lower exactly above that toy
-      loweredTo = toyTop(target) - CLAW_H + 10;
-    }else{
-      // no toy: lower to a safe probing height
-      loweredTo = Math.min(machine.clientHeight - 150, 280);
-    }
-
-    // LOWER slowly
-    claw.style.transition = 'top .85s ease';
-    clawY = Math.max(64, loweredTo);
-    updateClawPosition();
-    await sleep(850);
-
-    // CLOSE CLAW
-    claw.classList.add('closed');
-    await sleep(220);
-
-    // Attempt grab (70% success if a target exists)
-    const success = !!target && Math.random() < 0.70;
-
-    if(success){
-      grabbed = target;
-      grabbed.dataset.grabbed="true";
-      grabbed.classList.add('wobble');
-      // snap under claw
-      grabbed.style.transition = 'left .45s ease, top .45s ease, transform .18s ease';
-      grabbed.style.left = (clawX + CLAW_W/2 - 24) + 'px';
-      grabbed.style.top  = (clawY + CLAW_H - 8) + 'px';
-      setMsg('🤏 Got one!');
-    }else{
-      setMsg('🙃 Oops! Missed it.');
-    }
-
-    // LIFT slowly
-    claw.style.transition = 'top .9s ease';
-    clawY = 54;  // back to gantry height
-    updateClawPosition();
-    await sleep(900);
-
-    // Move to chute (left)
-    claw.style.transition = 'left 1.1s ease';
-    clawX = 16;
-    claw.classList.add('sway');
-    updateClawPosition();
-    await sleep(1100);
-    claw.classList.remove('sway');
-
-    // Deliver or drop early (if holding something)
-    if(grabbed){
-      const keep = Math.random() < 0.80;
-      if(keep){
-        // release into chute → collection row
-        grabbed.classList.remove('wobble');
-        grabbed.classList.add('drop-shake');
-        await sleep(120);
-        // visually "drop" a smidge
-        grabbed.style.top = (clawY + CLAW_H + 10) + 'px';
-        await sleep(220);
-        const icon = document.createElement('span');
-        icon.className='c';
-        icon.textContent = grabbed.textContent;
-        collection.appendChild(icon);
-        // remove from bin
-        grabbed.remove();
-        setMsg('🎉 Delivered!');
-      }else{
-        // OOPS drop early: fall back somewhere random on floor
-        setMsg('😬 Oops! Dropped it!');
-        grabbed.classList.remove('wobble');
-        grabbed.classList.add('drop-shake');
-        const randX = 40 + Math.random()*(machine.clientWidth-80);
-        const floorY = machine.clientHeight - 80 + (Math.random()*18 - 9);
-        grabbed.style.left = randX + 'px';
-        grabbed.style.top = floorY + 'px';
-        grabbed.dataset.grabbed="false";
-      }
-      grabbed = null;
-    }
-
-    // OPEN CLAW and return to center
-    claw.classList.remove('closed');
-    claw.style.transition = 'left .6s ease';
-    clawX = (machine.clientWidth - CLAW_W)/2;
-    updateClawPosition();
-    await sleep(620);
-
-    busy = false;
-  }
-
-  // Init
-  layoutToys();
-  updateClawPosition();
-
-  // Controls
-  document.getElementById('leftBtn').addEventListener('click', ()=>moveClaw(-1));
-  document.getElementById('rightBtn').addEventListener('click', ()=>moveClaw(1));
-  document.getElementById('grabBtn').addEventListener('click', grab);
-
-  // Resize handling (keeps positions reasonable)
-  addEventListener('resize', () => {
-    // keep claw within bounds
-    clawX = Math.max(6, Math.min(clawX, machine.clientWidth - CLAW_W - 6));
-    updateClawPosition();
-  });
-})();
+updateClaw();
 </script>
+
 </body>
 </html>
