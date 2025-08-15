@@ -3,46 +3,37 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Physics Emoji Claw Machine</title>
+<title>Realistic Emoji Claw Machine</title>
 <style>
   body {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    flex-direction: column;
     background: #f0f8ff;
     font-family: sans-serif;
-    flex-direction: column;
+    height: 100vh;
   }
 
   .machine {
-    width: 300px;
+    width: 350px;
     height: 400px;
     border: 5px solid #555;
     border-radius: 10px;
     position: relative;
     background: #dfefff;
     overflow: hidden;
-  }
-
-  .prizes {
-    position: absolute;
-    bottom: 0;
-    width: 100%;
-    display: flex;
-    justify-content: space-around;
-    font-size: 2em;
+    margin-bottom: 20px;
   }
 
   .claw {
-    width: 20px;
+    width: 30px;
     height: 100px;
     background: #888;
     position: absolute;
     top: 0;
-    left: 140px;
+    transition: left 0.3s, top 0.7s;
     transform-origin: top center;
-    animation: sway 2s infinite ease-in-out;
   }
 
   .claw-grab {
@@ -51,25 +42,32 @@
     background: #888;
     position: absolute;
     bottom: 0;
-    left: -15px;
+    left: -10px;
     border-radius: 5px;
   }
 
-  @keyframes sway {
-    0% { transform: rotate(-5deg); }
-    50% { transform: rotate(5deg); }
-    100% { transform: rotate(-5deg); }
+  .prizes {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    font-size: 2em;
   }
 
-  @keyframes float {
-    0% { transform: translateY(0px); }
-    50% { transform: translateY(-8px); }
-    100% { transform: translateY(0px); }
+  .prize {
+    position: absolute;
+    transition: top 0.5s, left 0.5s;
+  }
+
+  .controls {
+    margin-bottom: 10px;
   }
 
   button {
-    margin-top: 20px;
-    padding: 10px 20px;
+    margin: 0 5px;
+    padding: 10px 15px;
     font-size: 1em;
     cursor: pointer;
     border-radius: 5px;
@@ -82,91 +80,134 @@
     background: #e0f0ff;
   }
 
-  .message {
+  .fortune {
     margin-top: 10px;
-    font-size: 1.2em;
-    height: 1.5em;
-    text-align: center;
+    min-height: 2em;
+    font-size: 2em;
+    display: flex;
+    gap: 5px;
   }
 
-  span.grabbed {
-    animation: wiggle 0.5s ease-in-out;
+  .floating {
+    animation: float 2s ease-in-out infinite;
   }
 
-  @keyframes wiggle {
-    0% { transform: translateY(-150px) rotate(-10deg); }
-    25% { transform: translateY(-150px) rotate(10deg); }
-    50% { transform: translateY(-150px) rotate(-5deg); }
-    75% { transform: translateY(-150px) rotate(5deg); }
-    100% { transform: translateY(-150px) rotate(0deg); }
+  @keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-5px); }
+    100% { transform: translateY(0px); }
   }
 </style>
 </head>
 <body>
 
-<div class="machine">
-  <div class="claw">
+<div class="machine" id="machine">
+  <div class="claw" id="claw">
     <div class="claw-grab"></div>
   </div>
-  <div class="prizes" id="prizes">
-    <span>🍩</span>
-    <span>🍪</span>
-    <span>🍓</span>
-    <span>🍉</span>
-    <span>🍬</span>
-  </div>
 </div>
-<button id="grabBtn">Grab!</button>
-<div class="message" id="message"></div>
+
+<div class="controls">
+  <button id="leftBtn">←</button>
+  <button id="grabBtn">Grab</button>
+  <button id="rightBtn">→</button>
+</div>
+
+<div class="fortune" id="fortune"></div>
 
 <script>
-const claw = document.querySelector('.claw');
-const prizes = document.querySelectorAll('#prizes span');
-const button = document.getElementById('grabBtn');
-const message = document.getElementById('message');
+const machine = document.getElementById('machine');
+const claw = document.getElementById('claw');
+const leftBtn = document.getElementById('leftBtn');
+const rightBtn = document.getElementById('rightBtn');
+const grabBtn = document.getElementById('grabBtn');
+const fortune = document.getElementById('fortune');
 
-// Add floating effect to prizes
-prizes.forEach((prize, i) => {
-  prize.style.animation = `float 2s ease-in-out ${i * 0.2}s infinite`;
-});
+const columns = 5;
+const prizes = ['🍩','🍪','🍓','🍉','🍬','🍫','🍒','🍕','🍦','🥕'];
+const prizeElements = [];
+let clawPos = 2; // start at middle column
 
-button.addEventListener('click', () => {
-  message.textContent = '';
-  
-  // Stop claw sway while moving
-  claw.style.animation = 'none';
-  
-  // Animate claw down smoothly
-  claw.style.transition = 'top 1s ease-in-out, transform 0.3s';
-  claw.style.top = '250px';
-  claw.style.transform = 'rotate(0deg)';
-  
-  setTimeout(() => {
-    const success = Math.random() < 0.4; // 40% success
-    if (success) {
-      const prizeIndex = Math.floor(Math.random() * prizes.length);
-      const prize = prizes[prizeIndex];
-      
-      message.textContent = `You got a ${prize.textContent}! 🎉`;
-      prize.classList.add('grabbed');
-      
-      setTimeout(() => {
-        prize.classList.remove('grabbed');
-      }, 800);
-      
-    } else {
-      message.textContent = 'Oh no! Try again!';
+// Randomly stacked prizes
+const stackPrizes = () => {
+  for(let i=0;i<columns;i++){
+    let stackCount = Math.floor(Math.random() * 4) + 2; // 2-5 per column
+    for(let j=0;j<stackCount;j++){
+      let prize = document.createElement('span');
+      prize.className = 'prize floating';
+      prize.textContent = prizes[Math.floor(Math.random()*prizes.length)];
+      machine.appendChild(prize);
+      let left = 40 + i*60 + Math.random()*10 - 5; // slight x random
+      let top = 300 - j*50 + Math.random()*10 - 5;  // slight y random
+      prize.style.left = left+'px';
+      prize.style.top = top+'px';
+      prizeElements.push({el:prize, col:i, top:top});
     }
-    
-    // Animate claw back up
+  }
+};
+
+stackPrizes();
+
+// Move claw
+const moveClaw = (dir) => {
+  clawPos = Math.min(Math.max(clawPos + dir,0),columns-1);
+  let left = 40 + clawPos*60;
+  claw.style.left = left+'px';
+};
+
+leftBtn.addEventListener('click',()=>moveClaw(-1));
+rightBtn.addEventListener('click',()=>moveClaw(1));
+
+grabBtn.addEventListener('click', async ()=>{
+  // Find top prize in claw column
+  let columnPrizes = prizeElements.filter(p=>p.col===clawPos && p.top > 0);
+  columnPrizes.sort((a,b)=>a.top-b.top); // top-most first
+  if(columnPrizes.length===0) return;
+  let prize = columnPrizes[0];
+
+  // Move claw down
+  claw.style.top = (prize.top - 20)+'px';
+  await new Promise(r=>setTimeout(r,700));
+
+  // Grab attempt 70% success
+  let success = Math.random() < 0.7;
+  if(success){
+    // Attach prize to claw
+    prize.el.style.transition = 'top 0.5s, left 0.5s';
+    prize.el.style.top = (claw.offsetTop + 80)+'px';
+    prize.el.style.left = claw.offsetLeft -10 +'px';
+
+    // Move claw up
     claw.style.top = '0px';
-    
-    // Resume sway after delay
-    setTimeout(() => {
-      claw.style.animation = 'sway 2s infinite ease-in-out';
-    }, 1000);
-    
-  }, 1000);
+    await new Promise(r=>setTimeout(r,700));
+
+    // Move claw to drop area
+    let dropX = 20 + fortune.childElementCount*40;
+    claw.style.left = dropX+'px';
+    await new Promise(r=>setTimeout(r,700));
+
+    // 80% chance to keep until delivery
+    let keep = Math.random() < 0.8;
+    if(keep){
+      prize.el.style.top = '0px';
+      prize.el.style.left = '0px';
+      fortune.appendChild(prize.el);
+      prizeElements.splice(prizeElements.indexOf(prize),1);
+    } else {
+      // Dropped before delivery
+      prize.el.style.top = (prize.top + 50)+'px';
+      prize.el.style.left = prize.el.offsetLeft +'px';
+      prize.el.style.transition = 'top 0.5s, left 0.5s';
+      await new Promise(r=>setTimeout(r,500));
+      claw.style.left = 40 + clawPos*60 +'px';
+    }
+
+  } else {
+    // Failed grab
+    claw.style.top = '0px';
+    await new Promise(r=>setTimeout(r,700));
+    claw.style.left = 40 + clawPos*60 +'px';
+  }
 });
 </script>
 
