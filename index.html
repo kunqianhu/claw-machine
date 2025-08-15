@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Physics Emoji Claw Machine</title>
+<style>
+  body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: #f0f8ff;
+    font-family: sans-serif;
+    flex-direction: column;
+  }
+
+  .machine {
+    width: 300px;
+    height: 400px;
+    border: 5px solid #555;
+    border-radius: 10px;
+    position: relative;
+    background: #dfefff;
+    overflow: hidden;
+  }
+
+  .prizes {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    display: flex;
+    justify-content: space-around;
+    font-size: 2em;
+  }
+
+  .claw {
+    width: 20px;
+    height: 100px;
+    background: #888;
+    position: absolute;
+    top: 0;
+    left: 140px;
+    transform-origin: top center;
+    animation: sway 2s infinite ease-in-out;
+  }
+
+  .claw-grab {
+    width: 50px;
+    height: 20px;
+    background: #888;
+    position: absolute;
+    bottom: 0;
+    left: -15px;
+    border-radius: 5px;
+  }
+
+  @keyframes sway {
+    0% { transform: rotate(-5deg); }
+    50% { transform: rotate(5deg); }
+    100% { transform: rotate(-5deg); }
+  }
+
+  @keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-8px); }
+    100% { transform: translateY(0px); }
+  }
+
+  button {
+    margin-top: 20px;
+    padding: 10px 20px;
+    font-size: 1em;
+    cursor: pointer;
+    border-radius: 5px;
+    border: 2px solid #555;
+    background: #fff;
+    transition: background 0.3s;
+  }
+
+  button:hover {
+    background: #e0f0ff;
+  }
+
+  .message {
+    margin-top: 10px;
+    font-size: 1.2em;
+    height: 1.5em;
+    text-align: center;
+  }
+
+  span.grabbed {
+    animation: wiggle 0.5s ease-in-out;
+  }
+
+  @keyframes wiggle {
+    0% { transform: translateY(-150px) rotate(-10deg); }
+    25% { transform: translateY(-150px) rotate(10deg); }
+    50% { transform: translateY(-150px) rotate(-5deg); }
+    75% { transform: translateY(-150px) rotate(5deg); }
+    100% { transform: translateY(-150px) rotate(0deg); }
+  }
+</style>
+</head>
+<body>
+
+<div class="machine">
+  <div class="claw">
+    <div class="claw-grab"></div>
+  </div>
+  <div class="prizes" id="prizes">
+    <span>🍩</span>
+    <span>🍪</span>
+    <span>🍓</span>
+    <span>🍉</span>
+    <span>🍬</span>
+  </div>
+</div>
+<button id="grabBtn">Grab!</button>
+<div class="message" id="message"></div>
+
+<script>
+const claw = document.querySelector('.claw');
+const prizes = document.querySelectorAll('#prizes span');
+const button = document.getElementById('grabBtn');
+const message = document.getElementById('message');
+
+// Add floating effect to prizes
+prizes.forEach((prize, i) => {
+  prize.style.animation = `float 2s ease-in-out ${i * 0.2}s infinite`;
+});
+
+button.addEventListener('click', () => {
+  message.textContent = '';
+  
+  // Stop claw sway while moving
+  claw.style.animation = 'none';
+  
+  // Animate claw down smoothly
+  claw.style.transition = 'top 1s ease-in-out, transform 0.3s';
+  claw.style.top = '250px';
+  claw.style.transform = 'rotate(0deg)';
+  
+  setTimeout(() => {
+    const success = Math.random() < 0.4; // 40% success
+    if (success) {
+      const prizeIndex = Math.floor(Math.random() * prizes.length);
+      const prize = prizes[prizeIndex];
+      
+      message.textContent = `You got a ${prize.textContent}! 🎉`;
+      prize.classList.add('grabbed');
+      
+      setTimeout(() => {
+        prize.classList.remove('grabbed');
+      }, 800);
+      
+    } else {
+      message.textContent = 'Oh no! Try again!';
+    }
+    
+    // Animate claw back up
+    claw.style.top = '0px';
+    
+    // Resume sway after delay
+    setTimeout(() => {
+      claw.style.animation = 'sway 2s infinite ease-in-out';
+    }, 1000);
+    
+  }, 1000);
+});
+</script>
+
+</body>
+</html>
