@@ -3,231 +3,236 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Realistic Emoji Claw Machine</title>
+<title>Emoji Claw Machine</title>
 <style>
-body {
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  flex-direction: column;
-  background: #f0f8ff;
-  font-family: sans-serif;
-  height: 100vh;
-  padding-top: 20px;
-}
+  body {
+    background: #ffeef4;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: "Arial", sans-serif;
+    margin: 0;
+    padding: 20px;
+  }
 
-.machine {
-  width: 350px;
-  height: 400px;
-  border: 5px solid #555;
-  border-radius: 10px;
-  position: relative;
-  background: #dfefff;
-  overflow: hidden;
-  margin-bottom: 20px;
-}
+  h1 {
+    color: #ff7eb9;
+    text-align: center;
+  }
 
-.claw {
-  position: absolute;
-  top: 0;
-  left: 140px;
-  width: 60px;
-  height: 100px;
-}
+  .machine {
+    position: relative;
+    width: 480px;
+    height: 400px;
+    background: linear-gradient(to bottom, #ffe4e1, #ffd9ec);
+    border: 6px solid #ffb6c1;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    margin-bottom: 20px;
+  }
 
-.arm {
-  position: absolute;
-  width: 10px;
-  height: 50px;
-  background: #888;
-  top: 0;
-  transform-origin: top center;
-  transition: transform 0.3s;
-}
+  .claw {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    top: 20px;
+    transition: all 0.3s ease;
+    z-index: 100;
+  }
 
-.arm.left {
-  left: 0;
-  transform: rotate(-30deg);
-}
+  .claw .arm {
+    position: absolute;
+    width: 6px;
+    height: 30px;
+    background: #888;
+    top: 0;
+    border-radius: 3px;
+    transform-origin: top;
+    transition: transform 0.3s ease;
+  }
 
-.arm.right {
-  right: 0;
-  transform: rotate(30deg);
-}
+  .claw .arm.left {
+    left: 0;
+  }
+  .claw .arm.right {
+    right: 0;
+  }
 
-.claw-grab {
-  position: absolute;
-  width: 60px;
-  height: 20px;
-  background: #888;
-  bottom: 0;
-  border-radius: 5px;
-}
+  .claw .center {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: #aaa;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: 50%;
+  }
 
-.prizes {
-  position: absolute;
-  bottom: 0;
-  width: 100%;
-  font-size: 2em;
-}
+  .prize {
+    position: absolute;
+    font-size: 30px;
+    transition: all 0.5s ease;
+  }
 
-.prize {
-  position: absolute;
-  transition: top 0.5s, left 0.5s;
-}
+  .controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
 
-.controls {
-  margin-bottom: 10px;
-}
+  .controls button {
+    background: #ffb6c1;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 12px;
+    font-size: 16px;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+    transition: transform 0.2s ease, background 0.2s ease;
+  }
 
-button {
-  margin: 0 5px;
-  padding: 10px 15px;
-  font-size: 1em;
-  cursor: pointer;
-  border-radius: 5px;
-  border: 2px solid #555;
-  background: #fff;
-  transition: background 0.3s;
-}
+  .controls button:hover {
+    transform: scale(1.05);
+    background: #ff7eb9;
+  }
 
-button:hover {
-  background: #e0f0ff;
-}
+  .collection {
+    display: flex;
+    gap: 5px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    width: 480px;
+    padding: 10px;
+    background: #fff0f5;
+    border: 2px solid #ffc0cb;
+    border-radius: 12px;
+  }
 
-.fortune {
-  display: flex;
-  gap: 5px;
-  font-size: 2em;
-  min-height: 2em;
-  justify-content: flex-start;
-}
+  .collection span {
+    font-size: 30px;
+    transition: transform 0.3s ease;
+  }
+
+  .collection span:hover {
+    transform: scale(1.2);
+  }
 </style>
 </head>
 <body>
 
-<div class="machine" id="machine">
-  <div class="claw" id="claw">
-    <div class="arm left"></div>
-    <div class="arm right"></div>
-    <div class="claw-grab"></div>
-  </div>
-</div>
+<h1>🍬 Emoji Claw Machine 🍭</h1>
+
+<div class="machine" id="machine"></div>
 
 <div class="controls">
-  <button id="leftBtn">←</button>
-  <button id="grabBtn">Grab</button>
-  <button id="rightBtn">→</button>
+  <button id="leftBtn">← Left</button>
+  <button id="grabBtn">🎯 Grab</button>
+  <button id="rightBtn">Right →</button>
 </div>
 
-<div class="fortune" id="fortune"></div>
+<div class="collection" id="collection"></div>
 
 <script>
-const machine = document.getElementById('machine');
-const claw = document.getElementById('claw');
-const leftArm = claw.querySelector('.arm.left');
-const rightArm = claw.querySelector('.arm.right');
-const leftBtn = document.getElementById('leftBtn');
-const rightBtn = document.getElementById('rightBtn');
-const grabBtn = document.getElementById('grabBtn');
-const fortune = document.getElementById('fortune');
+  const machine = document.getElementById('machine');
+  const collection = document.getElementById('collection');
+  const clawSize = 60;
+  let clawX = 210;
+  let clawY = 20;
+  let clawGrabAngle = 45;
+  let isGrabbing = false;
 
-const columns = 5;
-const prizes = ['🍩','🍪','🍓','🍉','🍬','🍫','🍒','🍕','🍦','🥕'];
-const prizeElements = [];
-let clawPos = 2; // start at middle column
+  // Emoji prizes
+  const PRIZES = ["🧸","🍭","🍩","🐶","🐱","🎁","🪀","🍪","🍬","💎","🦄","🌸"];
+  const prizes = [];
 
-// Randomly stacked prizes
-const stackPrizes = () => {
-  for(let i=0;i<columns;i++){
-    let stackCount = Math.floor(Math.random() * 4) + 2; // 2-5 per column
-    for(let j=0;j<stackCount;j++){
-      let prize = document.createElement('span');
+  // Initialize prizes
+  for(let col=0; col<6; col++){
+    const stackHeight = Math.floor(Math.random()*3)+3; // 3-5 per column
+    for(let row=0; row<stackHeight; row++){
+      const prize = document.createElement('div');
       prize.className = 'prize';
-      prize.textContent = prizes[Math.floor(Math.random()*prizes.length)];
+      prize.innerText = PRIZES[Math.floor(Math.random()*PRIZES.length)];
+      prize.style.left = `${60 + col*70 + (Math.random()-0.5)*20}px`;
+      prize.style.top = `${350 - row*45 + (Math.random()-0.5)*10}px`;
+      prize.dataset.grabbed = "false";
       machine.appendChild(prize);
-      let left = 40 + i*60 + Math.random()*10 - 5;
-      let top = 300 - j*50 + Math.random()*10 - 5;
-      prize.style.left = left+'px';
-      prize.style.top = top+'px';
-      prizeElements.push({el:prize, col:i, top:top});
+      prizes.push(prize);
     }
   }
-};
-stackPrizes();
 
-// Move claw
-const moveClaw = (dir) => {
-  clawPos = Math.min(Math.max(clawPos + dir,0),columns-1);
-  let left = 40 + clawPos*60;
-  claw.style.left = left+'px';
-};
+  // Create claw
+  const claw = document.createElement('div');
+  claw.className = 'claw';
+  claw.style.left = clawX + 'px';
+  claw.style.top = clawY + 'px';
+  claw.innerHTML = `<div class="arm left"></div><div class="arm right"></div><div class="center"></div>`;
+  machine.appendChild(claw);
 
-leftBtn.addEventListener('click',()=>moveClaw(-1));
-rightBtn.addEventListener('click',()=>moveClaw(1));
+  function moveClaw(direction){
+    if(isGrabbing) return;
+    clawX += direction==='left' ? -70 : 70;
+    clawX = Math.max(0, Math.min(clawX, 420));
+    claw.style.left = clawX + 'px';
+  }
 
-const sleep = ms => new Promise(r=>setTimeout(r, ms));
+  async function grabPrize(){
+    if(isGrabbing) return;
+    isGrabbing = true;
+    // Lower claw
+    claw.style.top = '250px';
+    claw.querySelector('.arm.left').style.transform = 'rotate(-15deg)';
+    claw.querySelector('.arm.right').style.transform = 'rotate(15deg)';
+    await new Promise(r=>setTimeout(r,500));
 
-grabBtn.addEventListener('click', async ()=>{
-  // Find top prize in claw column
-  let columnPrizes = prizeElements.filter(p=>p.col===clawPos && p.top > 0);
-  columnPrizes.sort((a,b)=>a.top-b.top);
-  if(columnPrizes.length===0) return;
-  let prize = columnPrizes[0];
+    // Check prize under claw
+    const clawCenterX = clawX + clawSize/2;
+    const clawBottomY = 250 + clawSize;
+    const grabbable = prizes.filter(p => p.dataset.grabbed === "false" && 
+      Math.abs(p.offsetLeft - clawCenterX)<35 && Math.abs(p.offsetTop - clawBottomY)<40);
 
-  // Move claw down
-  claw.style.transition = 'top 0.7s';
-  claw.style.top = (prize.top - 20)+'px';
-  await sleep(700);
+    let grabbedPrize = null;
+    if(grabbable.length>0 && Math.random()<0.7){ // 70% grab chance
+      grabbedPrize = grabbable.reduce((top,p)=>p.offsetTop<top.offsetTop?p:top);
+      grabbedPrize.dataset.grabbed = "true";
+      grabbedPrize.style.left = clawCenterX + 'px';
+      grabbedPrize.style.top = (clawBottomY+20) + 'px';
+    }
 
-  // Close claw arms
-  leftArm.style.transform = 'rotate(-10deg)';
-  rightArm.style.transform = 'rotate(10deg)';
-  await sleep(300);
-
-  // Attempt grab 70%
-  let success = Math.random() < 0.7;
-  if(success){
-    // Move prize with claw
-    prize.el.style.transition = 'top 0.7s, left 0.7s';
-    prize.el.style.top = (claw.offsetTop + 80)+'px';
-    prize.el.style.left = claw.offsetLeft + 5 +'px';
-    
     // Lift claw
-    claw.style.top = '0px';
-    await sleep(700);
+    claw.style.top = '20px';
+    await new Promise(r=>setTimeout(r,500));
 
-    // Move to bottom storage
-    let dropX = 20 + fortune.childElementCount*40;
-    claw.style.left = dropX+'px';
-    await sleep(700);
+    // Move to collection
+    claw.style.left = '30px';
+    if(grabbedPrize) grabbedPrize.style.left = '45px';
 
-    // 80% chance keep prize
-    let keep = Math.random() < 0.8;
-    if(keep){
-      prize.el.style.transition = 'top 0.5s, left 0.5s';
-      prize.el.style.top = '0px';
-      prize.el.style.left = '0px';
-      fortune.appendChild(prize.el);
-      prizeElements.splice(prizeElements.indexOf(prize),1);
-    } else {
-      // Dropped before delivery
-      prize.el.style.top = (prize.top + 50)+'px';
-      prize.el.style.left = prize.el.offsetLeft +'px';
-      await sleep(500);
+    await new Promise(r=>setTimeout(r,500));
+
+    // Drop prize
+    if(grabbedPrize && Math.random()<0.8){ // 80% keep
+      collection.appendChild(grabbedPrize);
+      grabbedPrize.style.position = 'relative';
+      grabbedPrize.style.top = '0px';
+      grabbedPrize.style.left = '0px';
+    } else if(grabbedPrize){
+      grabbedPrize.dataset.grabbed = "false";
+      grabbedPrize.style.top = '350px';
     }
 
+    // Open claw
+    claw.querySelector('.arm.left').style.transform = 'rotate(-45deg)';
+    claw.querySelector('.arm.right').style.transform = 'rotate(45deg)';
+    clawX = 210;
+    claw.style.left = clawX+'px';
+    isGrabbing = false;
   }
 
-  // Open claw arms
-  leftArm.style.transform = 'rotate(-30deg)';
-  rightArm.style.transform = 'rotate(30deg)';
-  await sleep(300);
+  document.getElementById('leftBtn').onclick = ()=>moveClaw('left');
+  document.getElementById('rightBtn').onclick = ()=>moveClaw('right');
+  document.getElementById('grabBtn').onclick = grabPrize;
 
-  // Return claw to column
-  claw.style.left = 40 + clawPos*60 +'px';
-});
 </script>
-
 </body>
 </html>
