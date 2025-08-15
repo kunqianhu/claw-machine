@@ -5,104 +5,111 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Realistic Emoji Claw Machine</title>
 <style>
-  body {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
-    background: #f0f8ff;
-    font-family: sans-serif;
-    height: 100vh;
-  }
+body {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  flex-direction: column;
+  background: #f0f8ff;
+  font-family: sans-serif;
+  height: 100vh;
+  padding-top: 20px;
+}
 
-  .machine {
-    width: 350px;
-    height: 400px;
-    border: 5px solid #555;
-    border-radius: 10px;
-    position: relative;
-    background: #dfefff;
-    overflow: hidden;
-    margin-bottom: 20px;
-  }
+.machine {
+  width: 350px;
+  height: 400px;
+  border: 5px solid #555;
+  border-radius: 10px;
+  position: relative;
+  background: #dfefff;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
 
-  .claw {
-    width: 30px;
-    height: 100px;
-    background: #888;
-    position: absolute;
-    top: 0;
-    transition: left 0.3s, top 0.7s;
-    transform-origin: top center;
-  }
+.claw {
+  position: absolute;
+  top: 0;
+  left: 140px;
+  width: 60px;
+  height: 100px;
+}
 
-  .claw-grab {
-    width: 50px;
-    height: 20px;
-    background: #888;
-    position: absolute;
-    bottom: 0;
-    left: -10px;
-    border-radius: 5px;
-  }
+.arm {
+  position: absolute;
+  width: 10px;
+  height: 50px;
+  background: #888;
+  top: 0;
+  transform-origin: top center;
+  transition: transform 0.3s;
+}
 
-  .prizes {
-    position: absolute;
-    bottom: 0;
-    width: 100%;
-    display: flex;
-    justify-content: space-around;
-    flex-wrap: wrap;
-    font-size: 2em;
-  }
+.arm.left {
+  left: 0;
+  transform: rotate(-30deg);
+}
 
-  .prize {
-    position: absolute;
-    transition: top 0.5s, left 0.5s;
-  }
+.arm.right {
+  right: 0;
+  transform: rotate(30deg);
+}
 
-  .controls {
-    margin-bottom: 10px;
-  }
+.claw-grab {
+  position: absolute;
+  width: 60px;
+  height: 20px;
+  background: #888;
+  bottom: 0;
+  border-radius: 5px;
+}
 
-  button {
-    margin: 0 5px;
-    padding: 10px 15px;
-    font-size: 1em;
-    cursor: pointer;
-    border-radius: 5px;
-    border: 2px solid #555;
-    background: #fff;
-    transition: background 0.3s;
-  }
+.prizes {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  font-size: 2em;
+}
 
-  button:hover {
-    background: #e0f0ff;
-  }
+.prize {
+  position: absolute;
+  transition: top 0.5s, left 0.5s;
+}
 
-  .fortune {
-    margin-top: 10px;
-    min-height: 2em;
-    font-size: 2em;
-    display: flex;
-    gap: 5px;
-  }
+.controls {
+  margin-bottom: 10px;
+}
 
-  .floating {
-    animation: float 2s ease-in-out infinite;
-  }
+button {
+  margin: 0 5px;
+  padding: 10px 15px;
+  font-size: 1em;
+  cursor: pointer;
+  border-radius: 5px;
+  border: 2px solid #555;
+  background: #fff;
+  transition: background 0.3s;
+}
 
-  @keyframes float {
-    0% { transform: translateY(0px); }
-    50% { transform: translateY(-5px); }
-    100% { transform: translateY(0px); }
-  }
+button:hover {
+  background: #e0f0ff;
+}
+
+.fortune {
+  display: flex;
+  gap: 5px;
+  font-size: 2em;
+  min-height: 2em;
+  justify-content: flex-start;
+}
 </style>
 </head>
 <body>
 
 <div class="machine" id="machine">
   <div class="claw" id="claw">
+    <div class="arm left"></div>
+    <div class="arm right"></div>
     <div class="claw-grab"></div>
   </div>
 </div>
@@ -118,6 +125,8 @@
 <script>
 const machine = document.getElementById('machine');
 const claw = document.getElementById('claw');
+const leftArm = claw.querySelector('.arm.left');
+const rightArm = claw.querySelector('.arm.right');
 const leftBtn = document.getElementById('leftBtn');
 const rightBtn = document.getElementById('rightBtn');
 const grabBtn = document.getElementById('grabBtn');
@@ -134,18 +143,17 @@ const stackPrizes = () => {
     let stackCount = Math.floor(Math.random() * 4) + 2; // 2-5 per column
     for(let j=0;j<stackCount;j++){
       let prize = document.createElement('span');
-      prize.className = 'prize floating';
+      prize.className = 'prize';
       prize.textContent = prizes[Math.floor(Math.random()*prizes.length)];
       machine.appendChild(prize);
-      let left = 40 + i*60 + Math.random()*10 - 5; // slight x random
-      let top = 300 - j*50 + Math.random()*10 - 5;  // slight y random
+      let left = 40 + i*60 + Math.random()*10 - 5;
+      let top = 300 - j*50 + Math.random()*10 - 5;
       prize.style.left = left+'px';
       prize.style.top = top+'px';
       prizeElements.push({el:prize, col:i, top:top});
     }
   }
 };
-
 stackPrizes();
 
 // Move claw
@@ -158,37 +166,46 @@ const moveClaw = (dir) => {
 leftBtn.addEventListener('click',()=>moveClaw(-1));
 rightBtn.addEventListener('click',()=>moveClaw(1));
 
+const sleep = ms => new Promise(r=>setTimeout(r, ms));
+
 grabBtn.addEventListener('click', async ()=>{
   // Find top prize in claw column
   let columnPrizes = prizeElements.filter(p=>p.col===clawPos && p.top > 0);
-  columnPrizes.sort((a,b)=>a.top-b.top); // top-most first
+  columnPrizes.sort((a,b)=>a.top-b.top);
   if(columnPrizes.length===0) return;
   let prize = columnPrizes[0];
 
   // Move claw down
+  claw.style.transition = 'top 0.7s';
   claw.style.top = (prize.top - 20)+'px';
-  await new Promise(r=>setTimeout(r,700));
+  await sleep(700);
 
-  // Grab attempt 70% success
+  // Close claw arms
+  leftArm.style.transform = 'rotate(-10deg)';
+  rightArm.style.transform = 'rotate(10deg)';
+  await sleep(300);
+
+  // Attempt grab 70%
   let success = Math.random() < 0.7;
   if(success){
-    // Attach prize to claw
-    prize.el.style.transition = 'top 0.5s, left 0.5s';
+    // Move prize with claw
+    prize.el.style.transition = 'top 0.7s, left 0.7s';
     prize.el.style.top = (claw.offsetTop + 80)+'px';
-    prize.el.style.left = claw.offsetLeft -10 +'px';
-
-    // Move claw up
+    prize.el.style.left = claw.offsetLeft + 5 +'px';
+    
+    // Lift claw
     claw.style.top = '0px';
-    await new Promise(r=>setTimeout(r,700));
+    await sleep(700);
 
-    // Move claw to drop area
+    // Move to bottom storage
     let dropX = 20 + fortune.childElementCount*40;
     claw.style.left = dropX+'px';
-    await new Promise(r=>setTimeout(r,700));
+    await sleep(700);
 
-    // 80% chance to keep until delivery
+    // 80% chance keep prize
     let keep = Math.random() < 0.8;
     if(keep){
+      prize.el.style.transition = 'top 0.5s, left 0.5s';
       prize.el.style.top = '0px';
       prize.el.style.left = '0px';
       fortune.appendChild(prize.el);
@@ -197,17 +214,18 @@ grabBtn.addEventListener('click', async ()=>{
       // Dropped before delivery
       prize.el.style.top = (prize.top + 50)+'px';
       prize.el.style.left = prize.el.offsetLeft +'px';
-      prize.el.style.transition = 'top 0.5s, left 0.5s';
-      await new Promise(r=>setTimeout(r,500));
-      claw.style.left = 40 + clawPos*60 +'px';
+      await sleep(500);
     }
 
-  } else {
-    // Failed grab
-    claw.style.top = '0px';
-    await new Promise(r=>setTimeout(r,700));
-    claw.style.left = 40 + clawPos*60 +'px';
   }
+
+  // Open claw arms
+  leftArm.style.transform = 'rotate(-30deg)';
+  rightArm.style.transform = 'rotate(30deg)';
+  await sleep(300);
+
+  // Return claw to column
+  claw.style.left = 40 + clawPos*60 +'px';
 });
 </script>
 
