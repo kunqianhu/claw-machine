@@ -167,9 +167,10 @@ let grabbedPrize = null;
 // Emoji prizes
 const PRIZES = ["🧸","🍭","🍩","🐶","🐱","🎁","🪀","🍪","🍬","💎","🦄","🌸"];
 const prizes = [];
+const columns = 6;
 
 // Initialize prizes
-for(let col=0; col<6; col++){
+for(let col=0; col<columns; col++){
   const stackHeight = Math.floor(Math.random()*3)+3; // 3-5 per column
   for(let row=0; row<stackHeight; row++){
     const prize = document.createElement('div');
@@ -177,6 +178,8 @@ for(let col=0; col<6; col++){
     prize.innerText = PRIZES[Math.floor(Math.random()*PRIZES.length)];
     prize.style.left = `${60 + col*70 + (Math.random()-0.5)*20}px`;
     prize.style.top = `${350 - row*45 + (Math.random()-0.5)*10}px`;
+    prize.dataset.col = col;
+    prize.dataset.row = row;
     prize.dataset.grabbed = "false";
     machine.appendChild(prize);
     prizes.push(prize);
@@ -206,30 +209,44 @@ async function grabPrize(){
   if(isGrabbing) return;
   isGrabbing = true;
 
-  // Lower claw slowly
-  claw.style.transition = 'top 0.8s ease';
-  clawY = 250;
-  claw.style.top = clawY + 'px';
-  await new Promise(r=>setTimeout(r,800));
-
-  // Close claw arms
-  claw.querySelector('.arm.left').style.transform = 'rotate(-15deg)';
-  claw.querySelector('.arm.right').style.transform = 'rotate(15deg)';
-
-  // Check prize under claw
+  // Find closest column
+  const columnWidth = machine.clientWidth / columns;
   const clawCenterX = clawX + clawSize/2;
-  const clawBottomY = clawY + clawSize;
-  const grabbable = prizes.filter(p => p.dataset.grabbed === "false" &&
-    Math.abs(p.offsetLeft - clawCenterX)<35 && Math.abs(p.offsetTop - clawBottomY)<40);
+  const colIndex = Math.floor(clawCenterX / columnWidth);
 
-  if(grabbable.length>0 && Math.random()<0.7){
-    grabbedPrize = grabbable.reduce((top,p)=>p.offsetTop<top.offsetTop?p:top);
-    grabbedPrize.dataset.grabbed = "true";
-    grabbedPrize.classList.add('grabbed');
+  // Find top-most ungrabbed prize in column
+  const topPrizes = prizes.filter(p => p.dataset.col==colIndex && p.dataset.grabbed==="false");
+  if(topPrizes.length>0){
+    const topPrize = topPrizes.reduce((top,p)=>p.offsetTop<top.offsetTop?p:top);
+    const targetY = topPrize.offsetTop - clawSize + 10;
+
+    // Lower claw to top prize
+    claw.style.transition = 'top 0.8s ease';
+    clawY = targetY;
+    claw.style.top = clawY + 'px';
+    await new Promise(r=>setTimeout(r,800));
+
+    // Close claw arms
+    claw.querySelector('.arm.left').style.transform = 'rotate(-15deg)';
+    claw.querySelector('.arm.right').style.transform = 'rotate(15deg)';
+
+    // Attempt grab
+    if(Math.random()<0.7){
+      grabbedPrize = topPrize;
+      grabbedPrize.dataset.grabbed = "true";
+      grabbedPrize.classList.add('grabbed');
+    }
+  } else {
+    // No prize to grab, lower claw a bit anyway
+    claw.style.transition = 'top 0.8s ease';
+    clawY = 250;
+    claw.style.top = clawY + 'px';
+    await new Promise(r=>setTimeout(r,800));
   }
 
   // Lift claw slowly
   clawY = 20;
+  claw.style.transition = 'top 0.8s ease';
   claw.style.top = clawY + 'px';
   if(grabbedPrize){
     grabbedPrize.style.left = (clawX + clawSize/2 - 15) + 'px';
@@ -243,8 +260,6 @@ async function grabPrize(){
   claw.style.left = clawX + 'px';
   if(grabbedPrize){
     grabbedPrize.style.left = (clawX + clawSize/2 - 15) + 'px';
-    // Add wobble effect during move
-    grabbedPrize.classList.add('grabbed');
   }
   await new Promise(r=>setTimeout(r,1000));
 
