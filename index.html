@@ -3,181 +3,162 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pastel Claw Machine</title>
+<title>Emoji Claw Machine</title>
 <style>
     body {
-        background: #fceff1;
         font-family: Arial, sans-serif;
+        background-color: #ffeef6;
         text-align: center;
-        user-select: none;
         margin: 0;
         padding: 0;
     }
-    h1 {
-        color: #f28ca0;
+    canvas {
+        background-color: #fff0f5;
+        display: block;
+        margin: 0 auto;
+        border: 4px solid #ffb6c1;
+        border-radius: 10px;
     }
-    #game {
-        position: relative;
-        display: inline-block;
-        background: #fff4f7;
-        border: 4px solid #f7c5d0;
-        border-radius: 12px;
-        overflow: hidden;
-        width: 300px;
-        height: 400px;
-        margin-top: 10px;
-    }
-    .claw {
-        position: absolute;
-        top: 0;
-        width: 40px;
-        height: 40px;
-        font-size: 36px;
-        transition: top 0.3s;
-    }
-    .toy {
-        position: absolute;
-        font-size: 42px; /* Bigger emoji size */
-    }
-    #controls {
+    .controls {
         margin-top: 10px;
     }
     button {
-        padding: 8px 14px;
-        margin: 5px;
+        background-color: #ffb6c1;
         border: none;
-        border-radius: 6px;
-        background-color: #f7c5d0;
-        font-size: 18px;
-        cursor: pointer;
         color: white;
+        padding: 10px 20px;
+        margin: 5px;
+        font-size: 18px;
+        border-radius: 5px;
+        cursor: pointer;
     }
     button:active {
-        background-color: #f28ca0;
-    }
-    #message {
-        margin-top: 8px;
-        font-size: 18px;
-        color: #f28ca0;
-        height: 24px;
+        background-color: #ff69b4;
     }
 </style>
 </head>
 <body>
 
-<h1>🎀 Pastel Claw Machine 🎀</h1>
-
-<div id="game">
-    <div class="claw" id="claw">🪝</div>
+<canvas id="clawCanvas" width="400" height="500"></canvas>
+<div class="controls">
+    <button id="leftBtn">⬅</button>
+    <button id="grabBtn">Grab</button>
+    <button id="rightBtn">➡</button>
 </div>
-
-<div id="controls">
-    <button id="left">⬅️</button>
-    <button id="right">➡️</button>
-    <button id="grab">⬇️ Grab</button>
-</div>
-
-<div id="message"></div>
 
 <script>
-const game = document.getElementById("game");
-const claw = document.getElementById("claw");
-const message = document.getElementById("message");
+const canvas = document.getElementById("clawCanvas");
+const ctx = canvas.getContext("2d");
 
-let clawX = 130; // initial center position
-let clawY = 0;
-let toys = [];
-let moveInterval;
-const step = 5; // smaller steps for precision
-const toySize = 48; // emoji "touching" size
+let clawX = canvas.width / 2;
+let clawY = 50;
+let clawWidth = 40;
+let clawHeight = 20;
+let clawSpeed = 1.5; // smaller for precision
 
-// Spawn overlapping toys
-function spawnToys() {
-    const toyEmojis = ["🧸","🐼","🐰","🐱","🐶","🦄","🐥"];
-    for (let i = 0; i < 15; i++) {
-        let x = (i % 5) * (toySize - 6) + 10; // overlap a bit
-        let y = Math.floor(i / 5) * (toySize - 6) + 200;
-        let toy = document.createElement("div");
-        toy.className = "toy";
-        toy.textContent = toyEmojis[Math.floor(Math.random() * toyEmojis.length)];
-        toy.style.left = x + "px";
-        toy.style.top = y + "px";
-        game.appendChild(toy);
-        toys.push({ el: toy, x, y });
+let emojis = [];
+let clawHolding = null;
+let isGrabbing = false;
+let message = "";
+
+const emojiList = ["🧸","🐻","🐼","🐸","🦄","🐧","🐰","🐥","🐱","🐶"];
+
+function createEmojis() {
+    const emojiSize = 48; // big enough to overlap
+    const overlap = 10;   // pixels overlap
+    for (let y = 0; y < 5; y++) {
+        for (let x = 0; x < 7; x++) {
+            let emoji = emojiList[Math.floor(Math.random() * emojiList.length)];
+            emojis.push({
+                emoji: emoji,
+                x: x * (emojiSize - overlap) + 30,
+                y: canvas.height - 60 - y * (emojiSize - overlap),
+                size: emojiSize,
+                wobble: Math.random() * Math.PI * 2
+            });
+        }
     }
 }
-spawnToys();
 
-function updateClaw() {
-    claw.style.left = clawX + "px";
-    claw.style.top = clawY + "px";
+function drawClaw() {
+    ctx.fillStyle = "#ccc";
+    ctx.fillRect(clawX - 2, 0, 4, clawY); 
+    ctx.fillRect(clawX - clawWidth/2, clawY, clawWidth, clawHeight);
 }
 
-// Hold-to-move controls
-function startMove(direction) {
-    clearInterval(moveInterval);
-    moveInterval = setInterval(() => {
-        clawX += direction * step;
-        clawX = Math.max(0, Math.min(clawX, game.clientWidth - claw.clientWidth));
-        updateClaw();
-    }, 50);
+function drawEmojis() {
+    emojis.forEach(e => {
+        e.wobble += 0.05;
+        ctx.save();
+        ctx.translate(e.x, e.y);
+        ctx.rotate(Math.sin(e.wobble) * 0.05);
+        ctx.font = `${e.size}px serif`;
+        ctx.textAlign = "center";
+        ctx.fillText(e.emoji, 0, 0);
+        ctx.restore();
+    });
 }
 
-function stopMove() {
-    clearInterval(moveInterval);
+function drawMessage() {
+    if (message) {
+        ctx.fillStyle = "#ff69b4";
+        ctx.font = "20px Arial";
+        ctx.fillText(message, canvas.width/2, 40);
+    }
 }
 
-// Grab function
-document.getElementById("grab").addEventListener("click", () => {
-    let originalY = clawY;
-    clawY = 200;
-    updateClaw();
+function gameLoop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawClaw();
+    drawEmojis();
+    drawMessage();
+    requestAnimationFrame(gameLoop);
+}
 
-    setTimeout(() => {
-        // Find toy directly under claw
-        let grabbedToy = toys.find(t => 
-            clawX + 20 > t.x && clawX < t.x + toySize &&
-            Math.abs(200 - t.y) < 20
-        );
-
-        if (grabbedToy) {
-            // Chance to fail grab
-            if (Math.random() < 0.2) {
-                message.textContent = "😅 Oops! Missed the grab.";
-            } else {
-                // Chance to drop on way up
-                if (Math.random() < 0.2) {
-                    message.textContent = "😢 Oops! It slipped!";
-                } else {
-                    message.textContent = "🎉 You got " + grabbedToy.el.textContent + "!";
-                    game.removeChild(grabbedToy.el);
-                    toys = toys.filter(t => t !== grabbedToy);
-                }
-            }
-        } else {
-            message.textContent = "😅 Oops! Missed the grab.";
+function grab() {
+    if (isGrabbing) return;
+    isGrabbing = true;
+    message = "";
+    let target = emojis.find(e => 
+        e.x > clawX - clawWidth/2 && 
+        e.x < clawX + clawWidth/2 &&
+        e.y > clawY && e.y < clawY + 60
+    );
+    if (target) {
+        clawHolding = target;
+        emojis = emojis.filter(e => e !== target);
+        message = "Got it!";
+        // random drop chance
+        if (Math.random() < 0.2) {
+            setTimeout(() => { message = "Oops! Dropped it!"; clawHolding = null; }, 800);
         }
+    } else {
+        message = "Oops! Missed!";
+    }
+    setTimeout(() => { 
+        isGrabbing = false;
+        clawHolding = null;
+    }, 1000);
+}
 
-        clawY = originalY;
-        updateClaw();
-    }, 500);
+// Hold button movement
+let moveLeftInterval, moveRightInterval;
+
+document.getElementById("leftBtn").addEventListener("mousedown", () => {
+    moveLeftInterval = setInterval(() => { clawX -= clawSpeed; }, 10);
+});
+document.getElementById("rightBtn").addEventListener("mousedown", () => {
+    moveRightInterval = setInterval(() => { clawX += clawSpeed; }, 10);
+});
+document.addEventListener("mouseup", () => {
+    clearInterval(moveLeftInterval);
+    clearInterval(moveRightInterval);
 });
 
-// Left button hold
-document.getElementById("left").addEventListener("mousedown", () => startMove(-1));
-document.getElementById("left").addEventListener("touchstart", e => { e.preventDefault(); startMove(-1); });
-document.getElementById("left").addEventListener("mouseup", stopMove);
-document.getElementById("left").addEventListener("mouseleave", stopMove);
-document.getElementById("left").addEventListener("touchend", stopMove);
+document.getElementById("grabBtn").addEventListener("click", grab);
 
-// Right button hold
-document.getElementById("right").addEventListener("mousedown", () => startMove(1));
-document.getElementById("right").addEventListener("touchstart", e => { e.preventDefault(); startMove(1); });
-document.getElementById("right").addEventListener("mouseup", stopMove);
-document.getElementById("right").addEventListener("mouseleave", stopMove);
-document.getElementById("right").addEventListener("touchend", stopMove);
-
-updateClaw();
+createEmojis();
+gameLoop();
 </script>
 
 </body>
