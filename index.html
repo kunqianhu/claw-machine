@@ -209,15 +209,18 @@ async function grabPrize(){
   if(isGrabbing) return;
   isGrabbing = true;
 
-  // Find closest column
-  const columnWidth = machine.clientWidth / columns;
   const clawCenterX = clawX + clawSize/2;
-  const colIndex = Math.floor(clawCenterX / columnWidth);
 
-  // Find top-most ungrabbed prize in column
-  const topPrizes = prizes.filter(p => p.dataset.col==colIndex && p.dataset.grabbed==="false");
-  if(topPrizes.length>0){
-    const topPrize = topPrizes.reduce((top,p)=>p.offsetTop<top.offsetTop?p:top);
+  // Filter prizes: ungrabbed AND directly under claw (±30px)
+  const possiblePrizes = prizes.filter(p => 
+    p.dataset.grabbed==="false" &&
+    Math.abs((p.offsetLeft + 15) - clawCenterX) < 30
+  );
+
+  if(possiblePrizes.length > 0){
+    // Pick the top-most prize (smallest y)
+    const topPrize = possiblePrizes.reduce((top,p)=> p.offsetTop < top.offsetTop ? p : top);
+
     const targetY = topPrize.offsetTop - clawSize + 10;
 
     // Lower claw to top prize
@@ -230,18 +233,18 @@ async function grabPrize(){
     claw.querySelector('.arm.left').style.transform = 'rotate(-15deg)';
     claw.querySelector('.arm.right').style.transform = 'rotate(15deg)';
 
-    // Attempt grab
+    // Attempt grab (70% success)
     if(Math.random()<0.7){
       grabbedPrize = topPrize;
       grabbedPrize.dataset.grabbed = "true";
       grabbedPrize.classList.add('grabbed');
     }
   } else {
-    // No prize to grab, lower claw a bit anyway
-    claw.style.transition = 'top 0.8s ease';
-    clawY = 250;
+    // No prize directly under claw
+    claw.style.transition = 'top 0.5s ease';
+    clawY = 250; 
     claw.style.top = clawY + 'px';
-    await new Promise(r=>setTimeout(r,800));
+    await new Promise(r=>setTimeout(r,500));
   }
 
   // Lift claw slowly
@@ -263,7 +266,7 @@ async function grabPrize(){
   }
   await new Promise(r=>setTimeout(r,1000));
 
-  // Drop prize
+  // Drop prize (80% success)
   if(grabbedPrize){
     if(Math.random()<0.8){
       collection.appendChild(grabbedPrize);
